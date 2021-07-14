@@ -72,8 +72,29 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
 )
 
-check_sub_repo_exists(std_e)
-target_add_dependency(${PROJECT_NAME} std_e)
+include(${PROJECT_UTILS_CMAKE_DIR}/target_check_local_dependency.cmake)
+target_check_local_dependency(std_e OFF) # OFF means not required, TODO make arg optional
+if (std_e_FOUND)
+  target_add_dependency(${PROJECT_NAME} std_e)
+else()
+  find_package(std_e CONFIG REQUIRED)
+
+  # TODO fix if std_e not compiled here, doctest is not brought to cmake
+  include(FetchContent)
+  ### doctest ###
+  FetchContent_Declare(
+    doctest
+    #GIT_REPOSITORY https://github.com/onqtam/doctest.git
+    GIT_REPOSITORY https://github.com/BerengerBerthoul/doctest.git
+    GIT_TAG        f13a00607463ce211004be23b5aa0bdf24d3ab61
+    #GIT_TAG        mpi
+  )
+  FetchContent_GetProperties(doctest)
+  if(NOT doctest_POPULATED)
+    FetchContent_Populate(doctest)
+    add_subdirectory(${doctest_SOURCE_DIR} ${doctest_BINARY_DIR})
+  endif()
+endif()
 
 target_link_libraries(${PROJECT_NAME}
   PUBLIC
